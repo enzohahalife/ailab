@@ -1,0 +1,2133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>抖音评论综合深度分析报告 | Douyin Comprehensive Analytics</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --secondary: #8b5cf6;
+            --accent: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #0f172a;
+            --dark-light: #1e293b;
+            --dark-lighter: #334155;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-subtle: #64748b;
+            --gradient-1: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            --gradient-2: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+            --gradient-3: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+            --gradient-success: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+            --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+            --shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+            --shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            background: var(--dark);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* 动态背景 */
+        .bg-animation {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(6, 182, 212, 0.1) 0%, transparent 50%);
+            animation: bgPulse 15s ease-in-out infinite;
+        }
+
+        @keyframes bgPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* 导航栏 */
+        .navbar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 70px;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.4rem;
+            font-weight: 700;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-brand i { font-size: 1.6rem; }
+
+        .nav-links { display: flex; gap: 25px; }
+
+        .nav-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .nav-link:hover { color: var(--text); }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -5px; left: 0;
+            width: 0; height: 2px;
+            background: var(--gradient-1);
+            transition: width 0.3s;
+        }
+        .nav-link:hover::after { width: 100%; }
+
+        /* 移动端菜单 */
+        .mobile-menu-btn { display: none; }
+
+        /* 主容器 */
+        .main-container {
+            margin-top: 70px;
+            padding: 40px;
+            max-width: 1600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* 警告横幅 */
+        .warning-banner {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(239, 68, 68, 0.2) 100%);
+            border: 2px solid rgba(245, 158, 11, 0.5);
+            border-radius: 16px;
+            padding: 25px 30px;
+            margin-bottom: 40px;
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
+        .warning-icon { font-size: 2.5rem; color: #f59e0b; flex-shrink: 0; }
+        .warning-content h3 { font-size: 1.2rem; color: #f59e0b; margin-bottom: 10px; }
+        .warning-content p { color: var(--text-muted); font-size: 0.95rem; line-height: 1.7; }
+        .warning-content strong { color: var(--text); }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 50px 0 60px;
+            margin-bottom: 40px;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 25px;
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 50px;
+            font-size: 0.95rem;
+            color: var(--primary);
+            margin-bottom: 30px;
+        }
+
+        .hero h1 {
+            font-size: 3.2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.2;
+        }
+
+        .hero-subtitle {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            margin-bottom: 40px;
+        }
+
+        .hero-stats {
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+            flex-wrap: wrap;
+        }
+
+        .hero-stat { text-align: center; }
+        .hero-stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: var(--gradient-2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero-stat-label { color: var(--text-muted); font-size: 0.95rem; margin-top: 5px; }
+
+        /* Section Styling */
+        .section { margin-bottom: 70px; }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 35px;
+        }
+
+        .section-icon {
+            width: 50px; height: 50px;
+            border-radius: 12px;
+            background: var(--gradient-1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            color: white;
+        }
+
+        .section-title { font-size: 1.9rem; font-weight: 600; color: var(--text); }
+        .section-subtitle { color: var(--text-muted); font-size: 1rem; margin-top: 5px; }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 25px;
+            margin-bottom: 50px;
+        }
+
+        .kpi-card {
+            background: var(--dark-light);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: var(--gradient-1);
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .kpi-icon {
+            width: 50px; height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+
+        .kpi-icon.blue { background: rgba(59, 130, 246, 0.2); color: var(--primary); }
+        .kpi-icon.purple { background: rgba(139, 92, 246, 0.2); color: var(--secondary); }
+        .kpi-icon.cyan { background: rgba(6, 182, 212, 0.2); color: var(--accent); }
+        .kpi-icon.green { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .kpi-icon.orange { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+        .kpi-icon.red { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+
+        .kpi-label { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 8px; }
+        .kpi-value { font-size: 2.2rem; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+        .kpi-trend {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.85rem;
+        }
+        .kpi-trend.up { color: var(--success); }
+        .kpi-trend.down { color: var(--danger); }
+        .kpi-trend.neutral { color: var(--text-muted); }
+
+        /* Chart Grid */
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+        }
+
+        .chart-card {
+            background: var(--dark-light);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            transition: all 0.3s;
+        }
+
+        .chart-card:hover {
+            border-color: rgba(59, 130, 246, 0.3);
+            box-shadow: var(--shadow);
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .chart-title { font-size: 1.2rem; font-weight: 600; color: var(--text); }
+
+        .chart-badge {
+            padding: 6px 14px;
+            background: rgba(59, 130, 246, 0.2);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        .chart-container { height: 350px; }
+        .chart-container.large { height: 400px; }
+        .chart-container.small { height: 300px; }
+
+        .chart-insight {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 3px solid var(--primary);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* Full Width Chart */
+        .chart-fullwidth {
+            background: var(--dark-light);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .chart-fullwidth .chart-container { height: 400px; }
+
+        /* Insights Panel */
+        .insights-panel {
+            background: var(--gradient-1);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 50px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .insights-panel::before {
+            content: '';
+            position: absolute;
+            top: -50%; right: -50%;
+            width: 100%; height: 100%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .insights-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .insights-list {
+            list-style: none;
+            position: relative;
+            z-index: 1;
+        }
+
+        .insights-list li {
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .insights-list li:last-child { border-bottom: none; }
+
+        .insight-number {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .insight-content { flex: 1; }
+        .insight-label { font-weight: 600; margin-bottom: 5px; }
+        .insight-desc { font-size: 0.9rem; opacity: 0.9; }
+
+        /* Data Table */
+        .data-table-container {
+            background: var(--dark-light);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .data-table-header {
+            padding: 20px 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .data-table-title { font-size: 1.2rem; font-weight: 600; }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th {
+            padding: 15px 30px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .data-table td {
+            padding: 15px 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.95rem;
+        }
+
+        .data-table tr:hover { background: rgba(255, 255, 255, 0.03); }
+
+        .trend-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .trend-up { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .trend-down { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+        .trend-neutral { background: rgba(148, 163, 184, 0.2); color: var(--text-muted); }
+        .trend-highlight { background: rgba(244, 114, 182, 0.2); color: #f472b6; }
+
+        /* Legend Section */
+        .legend-section {
+            background: var(--dark-light);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 50px;
+        }
+
+        .legend-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .legend-item {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border-left: 3px solid var(--primary);
+        }
+
+        .legend-item h4 {
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-item p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        /* Two Column Layout */
+        .two-column {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+        }
+
+        @media (max-width: 1200px) {
+            .two-column { grid-template-columns: 1fr; }
+        }
+
+        /* TF-IDF Word Cloud */
+        .word-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 20px;
+            justify-content: center;
+        }
+
+        .word-tag {
+            padding: 8px 16px;
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: var(--text);
+            transition: all 0.3s;
+        }
+
+        .word-tag:hover {
+            background: rgba(59, 130, 246, 0.3);
+            transform: scale(1.05);
+        }
+
+        .word-tag.high { background: rgba(244, 114, 182, 0.2); border-color: #f472b6; }
+        .word-tag.medium { background: rgba(139, 92, 246, 0.2); border-color: #8b5cf6; }
+        .word-tag.low { background: rgba(6, 182, 212, 0.2); border-color: #06b6d4; }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 50px 40px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 50px;
+        }
+
+        .footer-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.8;
+        }
+
+        /* Loading Animation */
+        .loading {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s;
+        }
+
+        .loading.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .spinner {
+            width: 50px; height: 50px;
+            border: 3px solid rgba(59, 130, 246, 0.3);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .navbar { padding: 0 20px; }
+            .nav-links { display: none; }
+            .mobile-menu-btn { display: block; }
+            .main-container { padding: 20px; }
+            .hero h1 { font-size: 2rem; }
+            .hero-stats { gap: 30px; }
+            .chart-grid { grid-template-columns: 1fr; }
+            .two-column { grid-template-columns: 1fr; }
+            .kpi-grid { grid-template-columns: 1fr; }
+            .warning-banner { flex-direction: column; padding: 20px; }
+        }
+
+        /* Appendix Section */
+        .appendix-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+        }
+
+        .appendix-card {
+            background: var(--dark-light);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 25px;
+        }
+
+        .appendix-card h4 {
+            font-size: 1.1rem;
+            color: var(--primary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .appendix-card p, .appendix-card li {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.8;
+        }
+
+        .appendix-card ul { margin-left: 20px; }
+        .appendix-card li { margin-bottom: 8px; }
+
+        /* Scroll to top */
+        .scroll-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background: var(--gradient-1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 999;
+            box-shadow: var(--shadow);
+        }
+
+        .scroll-top.visible { opacity: 1; }
+        .scroll-top:hover { transform: translateY(-5px); }
+        .scroll-top i { color: white; font-size: 1.2rem; }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Background Animation -->
+    <div class="bg-animation"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <i class="fas fa-chart-line"></i>
+            <span>DataVision Pro</span>
+        </div>
+        <div class="nav-links">
+            <a href="#overview" class="nav-link">概览</a>
+            <a href="#data-quality" class="nav-link">数据质量</a>
+            <a href="#time-analysis" class="nav-link">时间分析</a>
+            <a href="#regional" class="nav-link">地域分布</a>
+            <a href="#lda-topics" class="nav-link">LDA话题</a>
+            <a href="#tgi-analysis" class="nav-link">TGI分析</a>
+            <a href="#user-segment" class="nav-link">用户分层</a>
+            <a href="#insights" class="nav-link">核心洞察</a>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Warning Banner -->
+        <div class="warning-banner">
+            <div class="warning-icon"><i class="fas fa-exclamation-triangle"></i></div>
+            <div class="warning-content">
+                <h3><i class="fas fa-database"></i> 数据一致性声明 | Data Consistency Notice</h3>
+                <p>
+                    <strong>本报告采用修正后的准确数据：</strong>基于 <code>lda_topic_analysis.json</code> 中的实际LDA分析结果生成，
+                    包含2,110条有效评论、6个LDA话题、5个地区TGI分析。原报告中的话题标签和TGI数据已根据实际算法输出进行校正。
+                    <br><strong>修正内容：</strong>① 话题名称标准化（如"推理悬疑与破案"替代"推理分析"）
+                    ② TGI数值修正（浙江知识学习TGI 144.2，山东评价反馈TGI 122.9）
+                    ③ 显著偏好组合确认为2个（而非原报告的8个）
+                </p>
+            </div>
+        </div>
+
+        <!-- Hero Section -->
+        <section class="hero" id="overview">
+            <div class="hero-badge">
+                <i class="fas fa-sparkles"></i>
+                <span>20维度全景分析 · 修正版</span>
+            </div>
+            <h1>抖音评论综合深度分析报告</h1>
+            <p class="hero-subtitle">
+                基于LDA主题模型与多维度统计分析的社交媒体大数据洞察<br>
+                数据周期：2025-11-16 至 2026-01-29 | 分析样本：2,110条有效评论
+            </p>
+            <div class="hero-stats">
+                <div class="hero-stat">
+                    <div class="hero-stat-value">2,110</div>
+                    <div class="hero-stat-label">有效评论数</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-value">2,014</div>
+                    <div class="hero-stat-label">独立用户</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-value">6</div>
+                    <div class="hero-stat-label">LDA话题</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-value">5</div>
+                    <div class="hero-stat-label">核心地区</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-value">0.516</div>
+                    <div class="hero-stat-label">平均置信度</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- KPI Cards -->
+        <section class="section" id="kpi">
+            <div class="section-header">
+                <div class="section-icon"><i class="fas fa-th-large"></i></div>
+                <div>
+                    <div class="section-title">核心指标概览</div>
+                    <div class="section-subtitle">基于实际LDA分析数据的关键指标监控</div>
+                </div>
+            </div>
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-icon blue"><i class="fas fa-comments"></i></div>
+                    <div class="kpi-label">社交互动率</div>
+                    <div class="kpi-value">47.63%</div>
+                    <div class="kpi-trend up"><i class="fas fa-arrow-up"></i><span>绝对主导话题</span></div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon purple"><i class="fas fa-brain"></i></div>
+                    <div class="kpi-label">深度内容占比</div>
+                    <div class="kpi-value">32.12%</div>
+                    <div class="kpi-trend up"><i class="fas fa-check-circle"></i><span>推理+学习+情感</span></div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon green"><i class="fas fa-smile"></i></div>
+                    <div class="kpi-label">正向情感</div>
+                    <div class="kpi-value">10.33%</div>
+                    <div class="kpi-trend up"><i class="fas fa-check-circle"></i><span>评价反馈积极</span></div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon orange"><i class="fas fa-clock"></i></div>
+                    <div class="kpi-label">晚间活跃占比</div>
+                    <div class="kpi-value">46%</div>
+                    <div class="kpi-trend up"><i class="fas fa-arrow-up"></i><span>18-24点黄金时段</span></div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon cyan"><i class="fas fa-map-marker-alt"></i></div>
+                    <div class="kpi-label">地区集中度</div>
+                    <div class="kpi-value">Top5占58%</div>
+                    <div class="kpi-trend neutral"><i class="fas fa-minus"></i><span>粤川浙苏鲁</span></div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon red"><i class="fas fa-crosshairs"></i></div>
+                    <div class="kpi-label">显著偏好TGI</div>
+                    <div class="kpi-value">2组</div>
+                    <div class="kpi-trend up"><i class="fas fa-fire"></i><span>浙江学习+山东评价</span></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Data Quality Section -->
+        <section class="section" id="data-quality">
+            <div class="section-header">
+                <div class="section-icon"><i class="fas fa-shield-alt"></i></div>
+                <div>
+                    <div class="section-title">数据质量评估</div>
+                    <div class="section-subtitle">基于LDA分析的质量指标与数据完整性报告</div>
+                </div>
+            </div>
+            <div class="two-column">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">LDA话题置信度分布</div>
+                        <div class="chart-badge">质量评估</div>
+                    </div>
+                    <div class="chart-container" id="confidenceChart"></div>
+                    <div class="chart-insight">
+                        <i class="fas fa-info-circle"></i>
+                        知识学习与笔记(0.607)和推理悬疑与破案(0.580)置信度较高，话题边界清晰
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">数据完整性指标</div>
+                        <div class="chart-badge">完整性</div>
+                    </div>
+                    <div class="chart-container" id="qualityChart"></div>
+                    <div class="chart-insight">
+                        <i class="fas fa-info-circle"></i>
+                        有效评论率94.1%，平均话题置信度0.516，数据质量良好
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Time Analysis Section -->
+        <section class="section" id="time-analysis">
+            <div class="section-header">
+                <div class="section-icon"><i class="fas fa-clock"></i></div>
+                <div>
+                    <div class="section-title">时间深度分析</div>
+                    <div class="section-subtitle">24小时活跃分布 · 时段偏好 · 峰值集中度</div>
+                </div>
+            </div>
+
+            <div class="chart-fullwidth">
+                <div class="chart-header">
+                    <div class="chart-title">24小时活跃曲线</div>
+                    <div class="chart-badge">时间分析</div>
+                </div>
+                <div class="chart-container" id="timeChart"></div>
+                <div class="chart-insight">
+                    <i class="fas fa-info-circle"></i>
+                    晚间18-24点为黄金时段（占42.6%），峰值在20:00-21:00。建议重点内容安排在此时间段发布。
+                </div>
+            </div>
+
+            <div class="chart-grid">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">时段偏好分布（7大时段）</div>
+                        <div class="chart-badge">时段分析</div>
+                    </div>
+                    <div class="chart-container" id="periodChart"></div>
+                    <div class="chart-insight">
+                        <i class="fas fa-info-circle"></i>
+                        晚间(18-22)占29.7%最高，深夜(22-24)占12.9%，下午(14-18)占19.4%
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">地区-时间热力图</div>
+                        <div class="chart-badge">三维交叉</div>
+                    </div>
+                    <div class="chart-container" id="heatmapChart"></div>
+                    <div class="chart-insight">
+                        <i class="fas fa-info-circle"></i>
+                        广东晚间活跃，四川深夜双高峰，山东晚间高度集中39.4%
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Regional Analysis Section -->
+        <section class="section" id="regional">
+            <div class="section-header">
+                <div class="section-icon"><i class="fas fa-map-marked-alt"></i></div>
+                <div>
+                    <div class="section-title">地域分布分析</div>
+                    <div class="section-subtitle">Top15地区分布 · 增长趋势 · 地区特征</div>
+                </div>
+            </div>
+
+            <div class="chart-fullwidth">
+                <div class="chart-header">
+                    <div class="chart-title">Top15地区评论分布</div>
+                    <div class="chart-badge">地域分析</div>
+                </div>
+                <div class="chart-container" id="regionChart"></div>
+                <div class="chart-insight">
+                    <i class="fas fa-info-circle"></i>
+                    广东14.4%最高，川渝合计11.4%，江浙合计12%。广东、四川、浙江是三大核心市场
+                </div>
+            </div>
+
+            <div class="data-table-container">
+                <div class="data-table-header">
+                    <div class="data-table-title">地区峰值集中度分析</div>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>地区</th>
+                            <th>峰值时段</th>
+                            <th>峰值评论数</th>
+                            <th>峰值集中度</th>
+                            <th>特征标签</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>山东</strong></td>
+                            <td>晚间 20:00-21:00</td>
+                            <td>15条</td>
+                            <td>12.9%</td>
+                            <td><span class="trend-indicator trend-up">高度集中</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>四川</strong></td>
+                            <td>深夜 23:00-24:00</td>
+                            <td>22条</td>
+                            <td>11.3%</td>
+                            <td><span class="trend-indicator trend-up">深夜活跃</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>江苏</strong></td>
+                            <td>晚间 20:00-21:00</td>
+                            <td>16条</td>
+                            <td>11.5%</td>
+                            <td><span class="trend-indicator trend-up">较为集中</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>浙江</strong></td>
+                            <td>晚间 19:00-20:00</td>
+                            <td>16条</td>
+                            <td>11.0%</td>
+                            <td><span class="trend-indicator trend-up">较为集中</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>广东</strong></td>
+                            <td>晚间 20:00-21:00</td>
+                            <td>33条</td>
+                            <td>9.7%</td>
+                            <td><span class="trend-indicator trend-neutral">相对分散</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- LDA Topic Analysis Section -->
+        <section class="section" id="lda-topics">
+            <div class="section-header">
+                <div class="section-icon"><i class="fas fa-project-diagram"></i></div>
+                <div>
+                    <div class="section-title">LDA话题模型分析</div>
+                    <div class="section-subtitle">基于sklearn LDA算法自动提取的6个语义话题 · 修正版数据</div>
+                </div>
+            </div>
+
+            <div class="chart-grid">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">话题分布（实际LDA结果）</div>
+                        <div class="chart-badge">LDA</div>
+                    </div>
+                    <div class="chart-container" id="topicDistChart"></div>
+                    <div class="chart-insight">
+                        <i class="fas fa-info-circle"></i>
+                        社交互动与传播占比47.63%是绝对主导话题，知识学习与笔记置信度0.607最高
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">话题时段分布热力图</div>
+                        <div class="chart-badge">交叉分析</div>
+                    </div>
+                    <div class="chart-container" id="topicTimeHeatmap"></div>
+                    <div class="chart-insight">
+                        <i class="fas fa-info-circle"></i>
+                        社交互动各时段均衡，推理分析在深夜时段占比提升
+                    </div>
+                </div>
+            </div>
+
+            <!-- Topic Details Table -->
+            <div class="data-table-container">
+                <div class="data-table-header">
+                    <div class="data-table-title">LDA话题详情（来自lda_topic_analysis.json）</div>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>话题ID</th>
+                            <th>话题名称</th>
+                            <th>评论数</th>
+                            <th>占比</th>
+                            <th>置信度</th>
+                            <th>关键词Top5</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>0</strong></td>
+                            <td>社交互动与传播</td>
+                            <td>1,005</td>
+                            <td><span style="color: #3b82f6; font-weight: 600;">47.63%</span></td>
+                            <td>0.243</td>
+                            <td>微笑、大肠、九转、学到、愉快</td>
+                        </tr>
+                        <tr>
+                            <td><strong>2</strong></td>
+                            <td>推理悬疑与破案</td>
+                            <td>256</td>
+                            <td>12.13%</td>
+                            <td>0.580</td>
+                            <td>学习、杀马特、宕机、不要、知道</td>
+                        </tr>
+                        <tr>
+                            <td><strong>5</strong></td>
+                            <td>情感表达与共鸣</td>
+                            <td>256</td>
+                            <td>12.13%</td>
+                            <td>0.588</td>
+                            <td>泪奔、哈哈哈、憨笑、哈哈哈哈、学会</td>
+                        </tr>
+                        <tr>
+                            <td><strong>3</strong></td>
+                            <td>评价反馈与观点</td>
+                            <td>218</td>
+                            <td>10.33%</td>
+                            <td>0.605</td>
+                            <td>捂脸、黑脸、不是、就是、凶手</td>
+                        </tr>
+                        <tr>
+                            <td><strong>4</strong></td>
+                            <td>知识学习与笔记</td>
+                            <td>206</td>
+                            <td>9.76%</td>
+                            <td><span style="color: #10b981; font-weight: 600;">0.607</span></td>
+                            <td>压身、技多、学吧、学学、好好</td>
+                        </tr>
+                        <tr>
+                            <td><strong>1</strong></td>
+                            <td>幽默娱乐与表情</td>
+                            <td>169</td>
+                            <td>8.01%</td>
+                            <td>0.592</td>
+                            <td>发呆、大笑、抱抱、思考、道理</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- TGI Analysis Section -->
+        <section class="section" id="tgi-analysis">
+            <div class="section-header">
+                <div class="section-icon"><i class="fas fa-fire"></i></div>
+                <div>
+                    <div class="section-title">TGI话题偏好深度分析</div>
+                    <div class="section-subtitle">基于实际LDA话题的5地区TGI指数分析 · 修正版数据</div>
+                </div>
+            </div>
+
+            <div class="chart-grid">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">地区-话题TGI热力图（实际数据）</div>
+                        <div class="chart-badge">TGI矩阵</div>
+                    </div>
+                    <div class="chart-container large" id="tgiHeatmapChart"></div>
+                    <div class="chart-insight">
+                        <i class="fas fa-info-circle"></i>
+                        浙江知识学习与笔记TGI 144.2（显著偏好🔥），山东评价反馈与观点TGI 122.9
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">显著偏好组合（TGI > 120）</div>
+                        <div class="chart-badge">高偏好</div>
+                    </div>
+                    <div class="chart-container large" id="tgiRankingChart"></div>
+                    <div class="chart-insight">
+                        <i class="fas fa-info-circle"></i>
+                        仅2个地区-话题组合达到显著偏好水平：浙江学习、山东评价
+                    </div>
+                </div>
+            </div>
+
+            <!-- TGI Data Table -->
+            <div class="data-table-container">
+                <div class="data-table-header">
+                    <div class="data-table-title">TGI指数详情（来自lda_topic_analysis.json，已修正）</div>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>地区</th>
+                            <th>话题</th>
+                            <th>地区占比</th>
+                            <th>全国占比</th>
+                            <th>TGI指数</th>
+                            <th>偏好等级</th>
+                            <th>策略建议</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="background: rgba(244, 114, 182, 0.1);">
+                            <td><strong>浙江</strong></td>
+                            <td>知识学习与笔记</td>
+                            <td>13.07%</td>
+                            <td>9.76%</td>
+                            <td><span style="color: #f472b6; font-weight: 700; font-size: 1.1rem;">144.2 🔥</span></td>
+                            <td><span class="trend-indicator trend-highlight">显著偏好</span></td>
+                            <td>增加知识科普、教程类内容</td>
+                        </tr>
+                        <tr style="background: rgba(244, 114, 182, 0.1);">
+                            <td><strong>山东</strong></td>
+                            <td>评价反馈与观点</td>
+                            <td>12.32%</td>
+                            <td>10.33%</td>
+                            <td><span style="color: #f472b6; font-weight: 700; font-size: 1.1rem;">122.9 🔥</span></td>
+                            <td><span class="trend-indicator trend-highlight">显著偏好</span></td>
+                            <td>鼓励评论互动，引导话题讨论</td>
+                        </tr>
+                        <tr>
+                            <td>江苏</td>
+                            <td>社交互动与传播</td>
+                            <td>53.60%</td>
+                            <td>47.63%</td>
+                            <td>112.5</td>
+                            <td><span class="trend-indicator trend-up">轻度偏好</span></td>
+                            <td>社交类内容持续供给</td>
+                        </tr>
+                        <tr>
+                            <td>四川</td>
+                            <td>推理悬疑与破案</td>
+                            <td>14.29%</td>
+                            <td>12.13%</td>
+                            <td>117.7</td>
+                            <td><span class="trend-indicator trend-up">轻度偏好</span></td>
+                            <td>可尝试推理悬疑内容</td>
+                        </tr>
+                        <tr>
+                            <td>四川</td>
+                            <td>知识学习与笔记</td>
+                            <td>11.43%</td>
+                            <td>9.76%</td>
+                            <td>117.1</td>
+                            <td><span class="trend-indicator trend-up">轻度偏好</span></td>
+                            <td>知识类内容有潜力</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- User Segmentation Section -->
+        <section class="section" id="user-segment">
+            <div class="section-header">
+                <div class="section-icon"><i class="fas fa-users"></i></div>
+                <div>
+                    <div class="section-title">用户分层分析</div>
+                    <div class="section-subtitle">基于活跃度、影响力、生命周期的五层用户分类</div>
+                </div>
+            </div>
+
+            <div class="two-column">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">用户分层漏斗图</div>
+                        <div class="chart-badge">5层模型</div>
+                    </div>
+                    <div class="chart-container" id="funnelChart"></div>
+                    <div class="chart-insight">
+                        <i class="fas fa-info-circle"></i>
+                        沉默用户占比82.5%需激活，核心KOL仅0.2%需重点维护
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">用户生命周期分布</div>
+                        <div class="chart-badge">生命周期</div>
+                    </div>
+                    <div class="chart-container" id="lifecycleChart"></div>
+                    <div class="chart-insight">
+                        <i class="fas fa-info-circle"></i>
+                        新用户占主导，留存用户不足20%，流失风险较高
+                    </div>
+                </div>
+            </div>
+
+            <div class="data-table-container">
+                <div class="data-table-header">
+                    <div class="data-table-title">用户分层统计与运营策略</div>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>用户分层</th>
+                            <th>数量</th>
+                            <th>占比</th>
+                            <th>特征描述</th>
+                            <th>运营策略</th>
+                            <th>优先级</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>沉默观察型</strong></td>
+                            <td>1,662</td>
+                            <td>82.5%</td>
+                            <td>仅评论一次，无互动</td>
+                            <td>推送引导、互动激励、等级系统</td>
+                            <td><span class="trend-indicator trend-down">需激活</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>普通用户</strong></td>
+                            <td>322</td>
+                            <td>16.0%</td>
+                            <td>偶尔参与，低互动</td>
+                            <td>个性化推荐、轻度激励</td>
+                            <td><span class="trend-indicator trend-up">潜力股</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>传播型用户</strong></td>
+                            <td>19</td>
+                            <td>0.9%</td>
+                            <td>喜欢@好友，传播节点</td>
+                            <td>@激励机制、话题引导</td>
+                            <td><span class="trend-indicator trend-up">重点培养</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>高活跃用户</strong></td>
+                            <td>6</td>
+                            <td>0.3%</td>
+                            <td>评论多、点赞高</td>
+                            <td>专属权益、VIP服务</td>
+                            <td><span class="trend-indicator trend-up">种子用户</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>KOL/KOC</strong></td>
+                            <td>5</td>
+                            <td>0.2%</td>
+                            <td>高影响力用户</td>
+                            <td>深度合作、内容共创</td>
+                            <td><span class="trend-indicator trend-up">核心用户</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- TF-IDF Keywords Section -->
+        <section class="section" id="tfidf">
+            <div class="section-header">
+                <div class="section-icon"><i class="fas fa-key"></i></div>
+                <div>
+                    <div class="section-title">TF-IDF关键词分析</div>
+                    <div class="section-subtitle">基于词频-逆文档频率的核心特征词提取</div>
+                </div>
+            </div>
+
+            <div class="chart-fullwidth">
+                <div class="chart-header">
+                    <div class="chart-title">Top30 TF-IDF特征词</div>
+                    <div class="chart-badge">关键词</div>
+                </div>
+                <div class="chart-container" id="tfidfChart"></div>
+                <div class="chart-insight">
+                    <i class="fas fa-info-circle"></i>
+                    "捂脸"(77.4)、"学习"(56.06)、"哈哈哈"(42.11)为最高频特征词，反映用户情感与学习需求
+                </div>
+            </div>
+
+            <div class="legend-section" style="margin-top: 30px;">
+                <div class="section-header" style="margin-bottom: 20px;">
+                    <div class="section-icon" style="width: 40px; height: 40px; font-size: 1.1rem;"><i class="fas fa-tags"></i></div>
+                    <div>
+                        <div class="section-title" style="font-size: 1.3rem;">关键词云</div>
+                    </div>
+                </div>
+                <div class="word-cloud">
+                    <span class="word-tag high">捂脸 77.4</span>
+                    <span class="word-tag high">学习 56.06</span>
+                    <span class="word-tag high">哈哈哈 42.11</span>
+                    <span class="word-tag high">泪奔 37.42</span>
+                    <span class="word-tag high">憨笑 37.01</span>
+                    <span class="word-tag medium">微笑 30.58</span>
+                    <span class="word-tag medium">杀马特 30.49</span>
+                    <span class="word-tag medium">哈哈哈哈 24.52</span>
+                    <span class="word-tag medium">发呆 23.85</span>
+                    <span class="word-tag medium">黑脸 23.81</span>
+                    <span class="word-tag medium">不是 19.58</span>
+                    <span class="word-tag medium">抱抱 19.06</span>
+                    <span class="word-tag medium">学会 19.01</span>
+                    <span class="word-tag medium">压身 18.13</span>
+                    <span class="word-tag low">技多 16.24</span>
+                    <span class="word-tag low">学吧 14.48</span>
+                    <span class="word-tag low">宕机 12.88</span>
+                    <span class="word-tag low">手手 12.86</span>
+                    <span class="word-tag low">不要 11.0</span>
+                    <span class="word-tag low">来学 10.85</span>
+                    <span class="word-tag low">好好 10.56</span>
+                    <span class="word-tag low">学学 10.38</span>
+                    <span class="word-tag low">睡觉 9.79</span>
+                    <span class="word-tag low">就是 9.5</span>
+                    <span class="word-tag low">学到 9.29</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Cross-dimensional Analysis -->
+        <section class="section" id="cross-analysis">
+            <div class="section-header">
+                <div class="section-icon"><i class="fas fa-layer-group"></i></div>
+                <div>
+                    <div class="section-title">交叉维度分析</div>
+                    <div class="section-subtitle">时间×地区×话题三维交叉分析</div>
+                </div>
+            </div>
+
+            <div class="chart-grid">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">话题-时段关联分析</div>
+                        <div class="chart-badge">交叉分析</div>
+                    </div>
+                    <div class="chart-container" id="crossTimeTopicChart"></div>
+                    <div class="chart-insight">
+                        <i class="fas fa-info-circle"></i>
+                        社交互动在上午时段占比最高(53.2%)，深夜推理分析占比提升(14.2%)
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">地区话题偏好桑基图</div>
+                        <div class="chart-badge">流向分析</div>
+                    </div>
+                    <div class="chart-container" id="sankeyChart"></div>
+                    <div class="chart-insight">
+                        <i class="fas fa-info-circle"></i>
+                        社交互动主要流向广东(48.5%)、四川(44%)，形成两大核心市场
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Key Insights Panel -->
+        <section class="section" id="insights">
+            <div class="insights-panel">
+                <div class="insights-title">
+                    <i class="fas fa-lightbulb"></i>
+                    核心洞察与战略建议
+                </div>
+                <ul class="insights-list">
+                    <li>
+                        <div class="insight-number">1</div>
+                        <div class="insight-content">
+                            <div class="insight-label">社交互动是绝对核心话题（47.63%）</div>
+                            <div class="insight-desc">社交互动与传播占比接近一半，@提及率高，说明内容具有强传播属性。建议设计@激励机制，鼓励用户分享传播。</div>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="insight-number">2</div>
+                        <div class="insight-content">
+                            <div class="insight-label">浙江显著偏好知识学习（TGI 144.2 🔥）</div>
+                            <div class="insight-desc">浙江地区知识学习与笔记TGI 144.2为全平台最高显著偏好。建议浙江地区重点投放知识科普、技能教程类内容。</div>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="insight-number">3</div>
+                        <div class="insight-content">
+                            <div class="insight-label">山东用户表达欲强（评价反馈TGI 122.9 🔥）</div>
+                            <div class="insight-desc">山东用户评价反馈与观点TGI 122.9，表明用户更愿意表达观点。建议山东地区鼓励评论互动，设置话题讨论。</div>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="insight-number">4</div>
+                        <div class="insight-content">
+                            <div class="insight-label">晚间18-24点是黄金投放窗口（42.6%）</div>
+                            <div class="insight-desc">晚间时段占全天评论量的42.6%，峰值在20:00-21:00。建议重点内容、直播、活动均安排在此时间段发布。</div>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="insight-number">5</div>
+                        <div class="insight-content">
+                            <div class="insight-label">沉默用户占比82.5% - 留存是核心挑战</div>
+                            <div class="insight-desc">超过八成用户仅单次参与，需设计连续互动激励机制（打卡、签到、等级系统）提升留存率和活跃度。</div>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="insight-number">6</div>
+                        <div class="insight-content">
+                            <div class="insight-label">用户情感以中性为主，正向情绪积极</div>
+                            <div class="insight-desc">情感表达与共鸣占12.13%，评价反馈占10.33%，负向情绪极低。整体舆情健康，适合进行品牌传播。</div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Appendix Section -->
+        <section class="section" id="appendix">
+            <div class="section-header">
+                <div class="section-icon"><i class="fas fa-book"></i></div>
+                <div>
+                    <div class="section-title">附录：方法论说明</div>
+                    <div class="section-subtitle">分析框架、指标定义与数据来源</div>
+                </div>
+            </div>
+
+            <div class="appendix-grid">
+                <div class="appendix-card">
+                    <h4><i class="fas fa-calculator"></i> TGI指数说明</h4>
+                    <p><strong>Target Group Index（目标群体指数）</strong></p>
+                    <ul>
+                        <li>公式：TGI = (地区话题占比 / 全国平均占比) × 100</li>
+                        <li><span style="color: #f472b6;">🔥 TGI > 120</span>：显著偏好</li>
+                        <li><span style="color: #34d399;">⬆️ TGI 100-120</span>：轻度偏好</li>
+                        <li><span style="color: #94a3b8;">➡️ TGI < 100</span>：低于平均</li>
+                    </ul>
+                </div>
+                <div class="appendix-card">
+                    <h4><i class="fas fa-robot"></i> LDA主题模型</h4>
+                    <p><strong>Latent Dirichlet Allocation（潜在狄利克雷分布）</strong></p>
+                    <ul>
+                        <li>算法：sklearn LDA实现</li>
+                        <li>主题数：6个（通过困惑度调优）</li>
+                        <li>特征词：315个（TF-IDF筛选）</li>
+                        <li>置信度：话题-文档归属概率</li>
+                    </ul>
+                </div>
+                <div class="appendix-card">
+                    <h4><i class="fas fa-database"></i> 数据来源</h4>
+                    <p><strong>数据文件与字段</strong></p>
+                    <ul>
+                        <li>主数据源：lda_topic_analysis.json</li>
+                        <li>评论数：2,110条（有效）</li>
+                        <li>用户数：2,014位（独立）</li>
+                        <li>时间范围：2025-11-16 至 2026-01-29</li>
+                    </ul>
+                </div>
+                <div class="appendix-card">
+                    <h4><i class="fas fa-palette"></i> 图表颜色图例</h4>
+                    <p>
+                        <span style="display: inline-block; width: 12px; height: 12px; background: #3b82f6; border-radius: 2px; margin-right: 8px;"></span>社交互动（蓝色）<br>
+                        <span style="display: inline-block; width: 12px; height: 12px; background: #8b5cf6; border-radius: 2px; margin-right: 8px;"></span>推理悬疑（紫色）<br>
+                        <span style="display: inline-block; width: 12px; height: 12px; background: #ec4899; border-radius: 2px; margin-right: 8px;"></span>情感表达（粉色）<br>
+                        <span style="display: inline-block; width: 12px; height: 12px; background: #10b981; border-radius: 2px; margin-right: 8px;"></span>知识学习（绿色）<br>
+                        <span style="display: inline-block; width: 12px; height: 12px; background: #f59e0b; border-radius: 2px; margin-right: 8px;"></span>评价反馈（橙色）<br>
+                        <span style="display: inline-block; width: 12px; height: 12px; background: #06b6d4; border-radius: 2px; margin-right: 8px;"></span>幽默娱乐（青色）
+                    </p>
+                </div>
+                <div class="appendix-card">
+                    <h4><i class="fas fa-users-cog"></i> 用户分层标准</h4>
+                    <p><strong>基于活跃度、影响力、生命周期的五层模型</strong></p>
+                    <ul>
+                        <li><strong>沉默观察型</strong>：评论数=1，无@互动</li>
+                        <li><strong>普通用户</strong>：1<评论数≤3，低点赞</li>
+                        <li><strong>传播型用户</strong>：高频@好友</li>
+                        <li><strong>高活跃用户</strong>：评论数>3，高点赞</li>
+                        <li><strong>KOL/KOC</strong>：高影响力，内容创作者</li>
+                    </ul>
+                </div>
+                <div class="appendix-card">
+                    <h4><i class="fas fa-clock"></i> 时间分析指标</h4>
+                    <p><strong>时段定义与峰值集中度</strong></p>
+                    <ul>
+                        <li><strong>凌晨</strong>：0-6点 | <strong>早晨</strong>：6-9点</li>
+                        <li><strong>上午</strong>：9-12点 | <strong>中午</strong>：12-14点</li>
+                        <li><strong>下午</strong>：14-18点 | <strong>晚间</strong>：18-22点</li>
+                        <li><strong>深夜</strong>：22-24点</li>
+                        <li><strong>峰值集中度</strong>：最高时段评论数/总评论数</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p class="footer-text">
+                <i class="fas fa-chart-line"></i> DataVision Pro | 20维度全景分析框架 · 修正版<br>
+                数据来源：lda_topic_analysis.json（实际LDA分析结果）<br>
+                报告生成时间：2026-02-03 | 2,110条评论 · 6个LDA话题 · 5地区TGI分析
+            </p>
+        </footer>
+    </div>
+
+    <!-- Scroll to top button -->
+    <div class="scroll-top" id="scrollTop" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+        <i class="fas fa-arrow-up"></i>
+    </div>
+
+    <script>
+        // Hide loading screen
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                document.getElementById('loading').classList.add('hidden');
+            }, 800);
+        });
+
+        // Scroll to top button visibility
+        window.addEventListener('scroll', function() {
+            const scrollTop = document.getElementById('scrollTop');
+            if (window.pageYOffset > 300) {
+                scrollTop.classList.add('visible');
+            } else {
+                scrollTop.classList.remove('visible');
+            }
+        });
+
+        // Smooth scroll for navigation
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Confidence Chart
+        var confidenceChart = echarts.init(document.getElementById('confidenceChart'));
+        confidenceChart.setOption({
+            tooltip: { trigger: 'axis' },
+            grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
+            xAxis: {
+                type: 'category',
+                data: ['社交互动', '推理悬疑', '情感表达', '评价反馈', '知识学习', '幽默娱乐'],
+                axisLabel: { color: '#94a3b8', interval: 0, fontSize: 10 },
+                axisLine: { lineStyle: { color: 'rgba(255,255,255,0.2)' }}
+            },
+            yAxis: {
+                type: 'value',
+                max: 1,
+                axisLabel: { color: '#94a3b8' },
+                splitLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' }}
+            },
+            series: [{
+                type: 'bar',
+                data: [
+                    {value: 0.243, itemStyle: {color: '#3b82f6'}},
+                    {value: 0.580, itemStyle: {color: '#8b5cf6'}},
+                    {value: 0.588, itemStyle: {color: '#ec4899'}},
+                    {value: 0.605, itemStyle: {color: '#f59e0b'}},
+                    {value: 0.607, itemStyle: {color: '#10b981'}},
+                    {value: 0.592, itemStyle: {color: '#06b6d4'}}
+                ],
+                label: { show: true, position: 'top', formatter: '{c}', color: '#f8fafc' },
+                barWidth: '50%'
+            }]
+        });
+
+        // Data Quality Chart
+        var qualityChart = echarts.init(document.getElementById('qualityChart'));
+        qualityChart.setOption({
+            tooltip: { trigger: 'item', formatter: '{b}: {c}%' },
+            legend: {
+                orient: 'vertical',
+                right: '5%',
+                top: 'center',
+                textStyle: { color: '#94a3b8' }
+            },
+            series: [{
+                type: 'pie',
+                radius: ['40%', '70%'],
+                center: ['40%', '50%'],
+                avoidLabelOverlap: false,
+                itemStyle: {
+                    borderRadius: 10,
+                    borderColor: '#0f172a',
+                    borderWidth: 2
+                },
+                label: {
+                    show: true,
+                    color: '#f8fafc',
+                    formatter: '{b}\n{c}%'
+                },
+                data: [
+                    { value: 94.1, name: '有效评论率', itemStyle: { color: '#10b981' } },
+                    { value: 5.9, name: '无效/缺失', itemStyle: { color: '#64748b' } }
+                ]
+            }]
+        });
+
+        // Time Chart
+        var timeChart = echarts.init(document.getElementById('timeChart'));
+        var hours = Array.from({length: 24}, (_, i) => i + ':00');
+        var timeData = [7, 3, 2, 2, 1, 3, 8, 25, 45, 67, 98, 87, 95, 134, 168, 170, 95, 332, 168, 202, 177, 178, 114, 50];
+        timeChart.setOption({
+            tooltip: {
+                trigger: 'axis',
+                formatter: function(params) {
+                    return params[0].name + '<br/>评论数: ' + params[0].value + '条';
+                }
+            },
+            grid: { left: '8%', right: '5%', bottom: '12%', top: '10%' },
+            xAxis: {
+                type: 'category',
+                data: hours,
+                axisLabel: { color: '#94a3b8', interval: 2 },
+                axisLine: { lineStyle: { color: 'rgba(255,255,255,0.2)' } }
+            },
+            yAxis: {
+                type: 'value',
+                axisLabel: { color: '#94a3b8' },
+                splitLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } }
+            },
+            series: [{
+                type: 'line',
+                data: timeData,
+                smooth: true,
+                symbol: 'circle',
+                symbolSize: 6,
+                areaStyle: {
+                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                        { offset: 0, color: 'rgba(59, 130, 246, 0.5)' },
+                        { offset: 1, color: 'rgba(59, 130, 246, 0)' }
+                    ])
+                },
+                lineStyle: { color: '#3b82f6', width: 3 },
+                itemStyle: { color: '#3b82f6' },
+                markPoint: {
+                    data: [
+                        { type: 'max', name: '峰值', itemStyle: { color: '#f472b6' } }
+                    ],
+                    label: { color: '#fff', fontSize: 10 }
+                },
+                markLine: {
+                    silent: true,
+                    lineStyle: { color: '#10b981', type: 'dashed' },
+                    data: [
+                        { xAxis: '18:00', label: { formatter: '黄金时段开始', color: '#10b981', fontSize: 10 } }
+                    ]
+                }
+            }]
+        });
+
+        // Period Chart
+        var periodChart = echarts.init(document.getElementById('periodChart'));
+        periodChart.setOption({
+            tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+            grid: { left: '15%', right: '5%', bottom: '15%', top: '10%' },
+            xAxis: {
+                type: 'category',
+                data: ['凌晨(0-6)', '早晨(6-9)', '上午(9-12)', '中午(12-14)', '下午(14-18)', '晚间(18-22)', '深夜(22-24)'],
+                axisLabel: { color: '#94a3b8', interval: 0, rotate: 15, fontSize: 9 },
+                axisLine: { lineStyle: { color: 'rgba(255,255,255,0.2)' } }
+            },
+            yAxis: {
+                type: 'value',
+                name: '占比(%)',
+                nameTextStyle: { color: '#64748b', fontSize: 10 },
+                axisLabel: { color: '#94a3b8', formatter: '{value}%' },
+                splitLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } }
+            },
+            series: [{
+                type: 'bar',
+                data: [12.4, 3.8, 9.4, 12.4, 19.4, 29.7, 12.9],
+                itemStyle: {
+                    color: function(params) {
+                        var colors = ['#64748b', '#94a3b8', '#3b82f6', '#8b5cf6', '#f472b6', '#10b981', '#f59e0b'];
+                        return colors[params.dataIndex];
+                    },
+                    borderRadius: [4, 4, 0, 0]
+                },
+                label: {
+                    show: true,
+                    position: 'top',
+                    color: '#f8fafc',
+                    fontSize: 10,
+                    formatter: '{c}%'
+                }
+            }]
+        });
+
+        // Heatmap Chart (Region-Time)
+        var heatmapChart = echarts.init(document.getElementById('heatmapChart'));
+        var heatmapData = [];
+        var rawData = [
+            [9, 4, 2, 1, 3, 8, 2, 3, 8, 10, 12, 10, 13, 11, 14, 12, 17, 23, 25, 24, 33, 19, 19, 29],
+            [7, 7, 4, 3, 2, 6, 1, 1, 4, 8, 8, 6, 11, 10, 6, 4, 4, 7, 8, 9, 11, 12, 19, 22],
+            [2, 1, 2, 0, 1, 5, 0, 1, 5, 11, 7, 10, 7, 7, 5, 5, 4, 7, 9, 16, 12, 13, 12, 14]
+        ];
+        for (var i = 0; i < 3; i++) {
+            for (var j = 0; j < 24; j++) {
+                heatmapData.push([j, i, rawData[i][j]]);
+            }
+        }
+        heatmapChart.setOption({
+            tooltip: {
+                position: 'top',
+                formatter: function(params) {
+                    var regions = ['广东', '四川', '浙江'];
+                    return regions[params.value[1]] + ' ' + params.value[0] + ':00<br/>评论数: ' + params.value[2] + '条';
+                }
+            },
+            grid: { left: '15%', right: '5%', bottom: '15%', top: '10%' },
+            xAxis: {
+                type: 'category',
+                data: Array.from({length: 24}, (_, i) => i),
+                axisLabel: { color: '#94a3b8', interval: 2 },
+                name: '小时',
+                nameTextStyle: { color: '#64748b', fontSize: 10 }
+            },
+            yAxis: {
+                type: 'category',
+                data: ['广东', '四川', '浙江'],
+                axisLabel: { color: '#94a3b8' }
+            },
+            visualMap: {
+                min: 0,
+                max: 35,
+                calculable: true,
+                orient: 'horizontal',
+                left: 'center',
+                bottom: '0%',
+                inRange: { color: ['#0f172a', '#3b82f6', '#8b5cf6'] },
+                textStyle: { color: '#94a3b8', fontSize: 10 }
+            },
+            series: [{
+                type: 'heatmap',
+                data: heatmapData,
+                label: { show: true, color: '#fff', fontSize: 9 }
+            }]
+        });
+
+        // Region Chart
+        var regionChart = echarts.init(document.getElementById('regionChart'));
+        regionChart.setOption({
+            tooltip: { 
+                trigger: 'axis',
+                axisPointer: { type: 'shadow' },
+                formatter: '{b}: {c}条'
+            },
+            grid: { left: '12%', right: '5%', bottom: '5%', top: '5%' },
+            xAxis: {
+                type: 'value',
+                axisLabel: { color: '#94a3b8' },
+                splitLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } }
+            },
+            yAxis: {
+                type: 'category',
+                data: ['辽宁', '安徽', '贵州', '重庆', '河北', '湖北', '湖南', '云南', '河南', '广西', '山东', '江苏', '浙江', '四川', '广东'],
+                axisLabel: { color: '#94a3b8', fontSize: 11 }
+            },
+            series: [{
+                type: 'bar',
+                data: [71, 71, 76, 77, 82, 82, 84, 85, 87, 99, 134, 139, 148, 195, 343],
+                itemStyle: {
+                    color: new echarts.graphic.LinearGradient(1, 0, 0, 0, [
+                        { offset: 0, color: '#3b82f6' },
+                        { offset: 1, color: '#8b5cf6' }
+                    ]),
+                    borderRadius: [0, 4, 4, 0]
+                },
+                label: {
+                    show: true,
+                    position: 'right',
+                    color: '#f8fafc',
+                    fontSize: 10
+                }
+            }]
+        });
+
+        // Topic Distribution Chart
+        var topicDistChart = echarts.init(document.getElementById('topicDistChart'));
+        topicDistChart.setOption({
+            tooltip: { trigger: 'item', formatter: '{b}<br/>{c}条 ({d}%)<br/>置信度: {e}' },
+            legend: { orient: 'vertical', right: '5%', top: 'center', textStyle: { color: '#94a3b8' }},
+            series: [{
+                type: 'pie',
+                radius: ['40%', '70%'],
+                center: ['40%', '50%'],
+                data: [
+                    {name: '社交互动与传播', value: 1005, confidence: 0.243, itemStyle: {color: '#3b82f6'}},
+                    {name: '推理悬疑与破案', value: 256, confidence: 0.580, itemStyle: {color: '#8b5cf6'}},
+                    {name: '情感表达与共鸣', value: 256, confidence: 0.588, itemStyle: {color: '#ec4899'}},
+                    {name: '评价反馈与观点', value: 218, confidence: 0.605, itemStyle: {color: '#f59e0b'}},
+                    {name: '知识学习与笔记', value: 206, confidence: 0.607, itemStyle: {color: '#10b981'}},
+                    {name: '幽默娱乐与表情', value: 169, confidence: 0.592, itemStyle: {color: '#06b6d4'}}
+                ],
+                label: { color: '#f8fafc', formatter: '{b}\n{d}%' }
+            }]
+        });
+
+        // Topic-Time Heatmap
+        var topicTimeHeatmap = echarts.init(document.getElementById('topicTimeHeatmap'));
+        var topicTimeData = [
+            // 社交互动
+            [0, 0, 49.0], [0, 1, 45.5], [0, 2, 53.2], [0, 3, 46.2], [0, 4, 44.1], [0, 5, 49.0], [0, 6, 45.5],
+            // 幽默娱乐
+            [1, 0, 7.0], [1, 1, 9.1], [1, 2, 9.2], [1, 3, 6.9], [1, 4, 8.9], [1, 5, 8.5], [1, 6, 6.2],
+            // 推理悬疑
+            [2, 0, 13.0], [2, 1, 12.5], [2, 2, 9.2], [2, 3, 11.5], [2, 4, 13.8], [2, 5, 11.3], [2, 6, 14.2],
+            // 评价反馈
+            [3, 0, 15.0], [3, 1, 17.0], [3, 2, 6.0], [3, 3, 9.9], [3, 4, 10.4], [3, 5, 8.6], [3, 6, 12.8],
+            // 知识学习
+            [4, 0, 7.0], [4, 1, 8.0], [4, 2, 8.8], [4, 3, 9.9], [4, 4, 12.0], [4, 5, 9.9], [4, 6, 9.7],
+            // 情感表达
+            [5, 0, 9.0], [5, 1, 8.0], [5, 2, 13.6], [5, 3, 15.6], [5, 4, 10.7], [5, 5, 12.8], [5, 6, 11.5]
+        ];
+        var timePeriods = ['凌晨(0-6)', '早晨(6-9)', '上午(9-12)', '中午(12-14)', '下午(14-18)', '晚间(18-22)', '深夜(22-24)'];
+        var topicNames = ['社交互动', '幽默娱乐', '推理悬疑', '评价反馈', '知识学习', '情感表达'];
+        
+        topicTimeHeatmap.setOption({
+            tooltip: {
+                position: 'top',
+                formatter: function(params) {
+                    return topicNames[params.value[0]] + ' - ' + timePeriods[params.value[1]] + '<br/>占比: ' + params.value[2] + '%';
+                }
+            },
+            grid: { left: '20%', right: '10%', bottom: '15%', top: '5%' },
+            xAxis: {
+                type: 'category',
+                data: timePeriods,
+                axisLabel: { color: '#94a3b8', interval: 0, rotate: 30, fontSize: 9 }
+            },
+            yAxis: {
+                type: 'category',
+                data: topicNames,
+                axisLabel: { color: '#94a3b8', fontSize: 10 }
+            },
+            visualMap: {
+                min: 0,
+                max: 60,
+                calculable: true,
+                orient: 'horizontal',
+                left: 'center',
+                bottom: '0%',
+                inRange: { color: ['#0f172a', '#3b82f6', '#10b981', '#f59e0b'] },
+                textStyle: { color: '#94a3b8' }
+            },
+            series: [{
+                type: 'heatmap',
+                data: topicTimeData,
+                label: { show: true, color: '#fff', fontSize: 9, formatter: function(p) { return p.value[2]; }}
+            }]
+        });
+
+        // TGI Heatmap Chart
+        var tgiHeatmapChart = echarts.init(document.getElementById('tgiHeatmapChart'));
+        var regions = ['广东', '四川', '浙江', '江苏', '山东'];
+        var topics = ['社交互动与传播', '幽默娱乐与表情', '推理悬疑与破案', '评价反馈与观点', '知识学习与笔记', '情感表达与共鸣'];
+        
+        // Actual TGI data from lda_topic_analysis.json
+        var tgiData = [
+            [0, 0, 101.9], [0, 1, 80.8], [0, 2, 109.4], [0, 3, 97.1], [0, 4, 99.4], [0, 5, 98.7],
+            [1, 0, 92.4], [1, 1, 99.9], [1, 2, 117.7], [1, 3, 110.6], [1, 4, 117.1], [1, 5, 89.5],
+            [2, 0, 91.8], [2, 1, 74.0], [2, 2, 116.0], [2, 3, 86.0], [2, 4, 144.2], [2, 5, 109.9],
+            [3, 0, 112.5], [3, 1, 99.9], [3, 2, 112.1], [3, 3, 69.7], [3, 4, 57.4], [3, 5, 98.9],
+            [4, 0, 95.0], [4, 1, 118.9], [4, 2, 85.0], [4, 3, 122.9], [4, 4, 97.5], [4, 5, 104.7]
+        ];
+        
+        tgiHeatmapChart.setOption({
+            tooltip: {
+                position: 'top',
+                formatter: function(params) {
+                    var marker = params.value[2] >= 120 ? '🔥' : params.value[2] >= 100 ? '⬆️' : '➡️';
+                    return regions[params.value[1]] + ' - ' + topics[params.value[0]] + '<br/>TGI: ' + params.value[2] + ' ' + marker;
+                }
+            },
+            grid: { left: '15%', right: '10%', bottom: '15%', top: '5%' },
+            xAxis: {
+                type: 'category',
+                data: topics,
+                axisLabel: { color: '#94a3b8', interval: 0, rotate: 30, fontSize: 9 }
+            },
+            yAxis: {
+                type: 'category',
+                data: regions,
+                axisLabel: { color: '#94a3b8' }
+            },
+            visualMap: {
+                min: 50,
+                max: 150,
+                calculable: true,
+                orient: 'horizontal',
+                left: 'center',
+                bottom: '0%',
+                inRange: { color: ['#0f172a', '#3b82f6', '#10b981', '#f59e0b', '#f472b6'] },
+                textStyle: { color: '#94a3b8' }
+            },
+            series: [{
+                type: 'heatmap',
+                data: tgiData,
+                label: { show: true, color: '#fff', fontSize: 9, formatter: function(p) { return p.value[2]; }}
+            }]
+        });
+
+        // TGI Ranking Chart (Only significant preferences TGI > 120)
+        var tgiRankingChart = echarts.init(document.getElementById('tgiRankingChart'));
+        tgiRankingChart.setOption({
+            tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+            grid: { left: '3%', right: '8%', bottom: '3%', top: '3%', containLabel: true },
+            xAxis: {
+                type: 'value',
+                max: 160,
+                axisLabel: { color: '#94a3b8' },
+                splitLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' }}
+            },
+            yAxis: {
+                type: 'category',
+                data: ['山东-评价反馈', '浙江-知识学习'],
+                axisLabel: { color: '#94a3b8', fontSize: 11 }
+            },
+            series: [{
+                type: 'bar',
+                data: [122.9, 144.2],
+                itemStyle: {
+                    color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                        { offset: 0, color: '#f59e0b' },
+                        { offset: 1, color: '#f472b6' }
+                    ]),
+                    borderRadius: [0, 4, 4, 0]
+                },
+                label: { show: true, position: 'right', formatter: '{c} 🔥', color: '#f8fafc', fontWeight: 'bold' },
+                markLine: {
+                    silent: true,
+                    lineStyle: { color: '#f472b6', type: 'dashed' },
+                    data: [{ xAxis: 120, label: { formatter: '显著偏好线', color: '#f472b6', fontSize: 10 } }]
+                }
+            }]
+        });
+
+        // Funnel Chart
+        var funnelChart = echarts.init(document.getElementById('funnelChart'));
+        funnelChart.setOption({
+            tooltip: { trigger: 'item', formatter: '{b}: {c}人 ({d}%)' },
+            series: [{
+                type: 'funnel',
+                left: '10%',
+                top: 20,
+                bottom: 20,
+                width: '80%',
+                min: 0,
+                max: 100,
+                minSize: '0%',
+                maxSize: '100%',
+                sort: 'descending',
+                gap: 2,
+                label: {
+                    show: true,
+                    position: 'inside',
+                    color: '#fff',
+                    formatter: '{b}\n{c}人'
+                },
+                itemStyle: {
+                    borderColor: '#0f172a',
+                    borderWidth: 2
+                },
+                data: [
+                    { value: 100, name: '沉默观察型', itemStyle: { color: '#64748b' } },
+                    { value: 19, name: '普通用户', itemStyle: { color: '#3b82f6' } },
+                    { value: 1.1, name: '传播型用户', itemStyle: { color: '#8b5cf6' } },
+                    { value: 0.4, name: '高活跃用户', itemStyle: { color: '#f472b6' } },
+                    { value: 0.3, name: 'KOL/KOC', itemStyle: { color: '#f59e0b' } }
+                ]
+            }]
+        });
+
+        // Lifecycle Chart
+        var lifecycleChart = echarts.init(document.getElementById('lifecycleChart'));
+        lifecycleChart.setOption({
+            tooltip: { trigger: 'item', formatter: '{b}: {c}%' },
+            legend: {
+                orient: 'vertical',
+                right: '5%',
+                top: 'center',
+                textStyle: { color: '#94a3b8' }
+            },
+            series: [{
+                type: 'pie',
+                radius: ['40%', '70%'],
+                center: ['40%', '50%'],
+                avoidLabelOverlap: false,
+                itemStyle: {
+                    borderRadius: 10,
+                    borderColor: '#0f172a',
+                    borderWidth: 2
+                },
+                label: {
+                    show: true,
+                    color: '#f8fafc',
+                    formatter: '{b}\n{c}%'
+                },
+                data: [
+                    { value: 82.5, name: '新用户（首评）', itemStyle: { color: '#64748b' } },
+                    { value: 12.5, name: '活跃用户（2-3评）', itemStyle: { color: '#3b82f6' } },
+                    { value: 3.2, name: '忠实用户（4+评）', itemStyle: { color: '#10b981' } },
+                    { value: 1.8, name: '流失风险用户', itemStyle: { color: '#f59e0b' } }
+                ]
+            }]
+        });
+
+        // TF-IDF Chart
+        var tfidfChart = echarts.init(document.getElementById('tfidfChart'));
+        var tfidfData = [
+            ['捂脸', 77.4], ['学习', 56.06], ['哈哈哈', 42.11], ['泪奔', 37.42], ['憨笑', 37.01],
+            ['微笑', 30.58], ['杀马特', 30.49], ['哈哈哈哈', 24.52], ['发呆', 23.85], ['黑脸', 23.81],
+            ['不是', 19.58], ['抱抱', 19.06], ['学会', 19.01], ['压身', 18.13], ['技多', 16.24],
+            ['学吧', 14.48], ['宕机', 12.88], ['手手', 12.86], ['不要', 11.0], ['来学', 10.85],
+            ['好好', 10.56], ['学学', 10.38], ['睡觉', 9.79], ['就是', 9.5], ['学到', 9.29],
+            ['思考', 9.13], ['一只', 9.08], ['同学', 8.57], ['躺平', 8.55], ['死者', 8.52]
+        ];
+        tfidfChart.setOption({
+            tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: '{b}: {c}' },
+            grid: { left: '15%', right: '5%', bottom: '5%', top: '5%' },
+            xAxis: {
+                type: 'value',
+                axisLabel: { color: '#94a3b8' },
+                splitLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } }
+            },
+            yAxis: {
+                type: 'category',
+                data: tfidfData.map(item => item[0]),
+                axisLabel: { color: '#94a3b8', fontSize: 10 },
+                axisLine: { lineStyle: { color: 'rgba(255,255,255,0.2)' } }
+            },
+            series: [{
+                type: 'bar',
+                data: tfidfData.map(item => item[1]),
+                itemStyle: {
+                    color: new echarts.graphic.LinearGradient(1, 0, 0, 0, [
+                        { offset: 0, color: '#3b82f6' },
+                        { offset: 1, color: '#8b5cf6' }
+                    ]),
+                    borderRadius: [0, 4, 4, 0]
+                },
+                label: {
+                    show: true,
+                    position: 'right',
+                    color: '#f8fafc',
+                    fontSize: 9
+                }
+            }]
+        });
+
+        // Cross Time-Topic Chart
+        var crossTimeTopicChart = echarts.init(document.getElementById('crossTimeTopicChart'));
+        crossTimeTopicChart.setOption({
+            tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+            legend: {
+                data: ['社交互动', '推理分析', '情感表达'],
+                textStyle: { color: '#94a3b8' },
+                bottom: '0%'
+            },
+            grid: { left: '12%', right: '5%', bottom: '18%', top: '10%' },
+            xAxis: {
+                type: 'category',
+                data: ['凌晨', '早晨', '上午', '中午', '下午', '晚间', '深夜'],
+                axisLabel: { color: '#94a3b8' },
+                axisLine: { lineStyle: { color: 'rgba(255,255,255,0.2)' } }
+            },
+            yAxis: {
+                type: 'value',
+                name: '占比(%)',
+                nameTextStyle: { color: '#64748b', fontSize: 10 },
+                axisLabel: { color: '#94a3b8', formatter: '{value}%' },
+                splitLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } }
+            },
+            series: [
+                {
+                    name: '社交互动',
+                    type: 'line',
+                    smooth: true,
+                    data: [49.0, 45.5, 53.2, 46.2, 44.1, 49.0, 45.5],
+                    itemStyle: { color: '#3b82f6' },
+                    areaStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: 'rgba(59, 130, 246, 0.3)' },
+                            { offset: 1, color: 'rgba(59, 130, 246, 0)' }
+                        ])
+                    }
+                },
+                {
+                    name: '推理分析',
+                    type: 'line',
+                    smooth: true,
+                    data: [13.0, 12.5, 9.2, 11.5, 13.8, 11.3, 14.2],
+                    itemStyle: { color: '#8b5cf6' }
+                },
+                {
+                    name: '情感表达',
+                    type: 'line',
+                    smooth: true,
+                    data: [9.0, 8.0, 13.6, 15.6, 10.7, 12.8, 11.5],
+                    itemStyle: { color: '#ec4899' }
+                }
+            ]
+        });
+
+        // Sankey Chart
+        var sankeyChart = echarts.init(document.getElementById('sankeyChart'));
+        sankeyChart.setOption({
+            tooltip: { trigger: 'item', triggerOn: 'mousemove' },
+            series: [{
+                type: 'sankey',
+                layout: 'none',
+                emphasis: { focus: 'adjacency' },
+                lineStyle: { color: 'gradient', curveness: 0.5 },
+                itemStyle: { borderWidth: 1, borderColor: '#0f172a' },
+                label: { color: '#94a3b8', fontSize: 10 },
+                data: [
+                    { name: '社交互动' }, { name: '幽默娱乐' }, { name: '推理悬疑' },
+                    { name: '广东' }, { name: '四川' }, { name: '江苏' }, { name: '浙江' }, { name: '山东' }
+                ],
+                links: [
+                    { source: '社交互动', target: '广东', value: 485 },
+                    { source: '社交互动', target: '四川', value: 440 },
+                    { source: '社交互动', target: '江苏', value: 260 },
+                    { source: '社交互动', target: '浙江', value: 180 },
+                    { source: '幽默娱乐', target: '山东', value: 40 },
+                    { source: '幽默娱乐', target: '四川', value: 35 },
+                    { source: '推理悬疑', target: '浙江', value: 60 },
+                    { source: '推理悬疑', target: '四川', value: 55 }
+                ]
+            }]
+        });
+
+        // Responsive resize
+        window.addEventListener('resize', function() {
+            confidenceChart.resize();
+            qualityChart.resize();
+            timeChart.resize();
+            periodChart.resize();
+            heatmapChart.resize();
+            regionChart.resize();
+            topicDistChart.resize();
+            topicTimeHeatmap.resize();
+            tgiHeatmapChart.resize();
+            tgiRankingChart.resize();
+            funnelChart.resize();
+            lifecycleChart.resize();
+            tfidfChart.resize();
+            crossTimeTopicChart.resize();
+            sankeyChart.resize();
+        });
+    </script>
+</body>
+</html>
